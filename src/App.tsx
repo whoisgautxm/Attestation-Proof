@@ -20,11 +20,27 @@ const App = () => {
       <ConnectButton />
     </div>
 
-    <div>
+      <div className='heading'>
+        <h1>Create ZKPs of Attestations</h1>
+      </div>
 
-    <label>First name:</label>
-    <input type="text" id="fname" name="fname" />
+    <div className='input'>
+
+    <div className='input-uid'>
+    <label>Enter UID:</label>
+    <input type="text" id="fname" name="fname" placeholder='UID'/>
+    </div>
+
+    <div className='submit-uid'>
+    <button>
+      Create Proof
+    </button>
+    </div>
     </div> 
+
+
+
+
     </div>
  
 
