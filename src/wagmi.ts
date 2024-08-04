@@ -17,6 +17,7 @@ export const config = getDefaultConfig({
     optimism,
     arbitrum,
     base,
+    sepolia,
     ...(process.env.REACT_APP_ENABLE_TESTNETS === 'true' ? [sepolia] : []),
   ],
 });

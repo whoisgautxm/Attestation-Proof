@@ -1,53 +1,23 @@
+import React, { useState } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { getAccount } from '@wagmi/core';
 import { config } from './wagmi';
-import { useState } from "react";
-
-
- 
-
+import { attestation_data } from "./attestation_data";
+import { useEthersProvider } from './client_to_provider';
 
 const App = () => {
   const [uid, setUid] = useState("");
+  const provider = useEthersProvider({ chainId: 11155111 });
 
-  const fetchAttestationData = async () => {
-    try {
-      console.log("UID:", uid); // Ensure UID is being logged correctly
-      const response = await fetch('https://easscan.org/graphql', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query: `query Attestation {
-            attestation(/
-              where: { id: "${uid}" }
-            ) {
-              id
-              attester
-              recipient
-              refUID
-              revocable
-              revocationTime
-              expirationTime
-              data
-            }
-          }`,
-          variables: {},
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+  const fetchAttestationData = async (uid:string) => {
+    if (provider) {
+      try {
+        await attestation_data(uid, provider);
+      } catch (error) {
+        console.error("Error fetching attestation data:", error);
       }
-
-      const data = await response.json();
-      console.log("Attestation Data:", data); // Log the fetched data
-
-      const account = getAccount(config);
-      console.log("Account Data:", account); // Log the account data
-    } catch (error) {
-      console.error('Error fetching attestation data:', error);
+    } else {
+      console.error("Provider is not available");
     }
   };
 
@@ -83,7 +53,7 @@ const App = () => {
         </div>
 
         <div className="submit-uid">
-          <button onClick={() => fetchAttestationData()}>Generate ZK Proof</button>
+          <button onClick={() => fetchAttestationData(uid)}>Generate ZK Proof</button>
         </div>
       </div>
     </div>
