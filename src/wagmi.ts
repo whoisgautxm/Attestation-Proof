@@ -1,4 +1,8 @@
-import { getDefaultConfig } from '@rainbow-me/rainbowkit';
+import {
+  getDefaultConfig,
+  RainbowKitProvider,
+} from '@rainbow-me/rainbowkit';
+import '@rainbow-me/rainbowkit/styles.css';
 import {
   arbitrum,
   base,
@@ -7,6 +11,11 @@ import {
   polygon,
   sepolia,
 } from 'wagmi/chains';
+import { WagmiProvider } from 'wagmi'
+import {
+  QueryClientProvider,
+  QueryClient,
+} from "@tanstack/react-query";
 
 export const config = getDefaultConfig({
   appName: 'RainbowKit demo',
