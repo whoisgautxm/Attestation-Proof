@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@ethereum-attestation-service/eas-sdk": "^2.5.0",
+    "@nextui-org/input": "^2.2.4",
     "@rainbow-me/rainbowkit": "^2.1.3",
     "@rainbow-me/rainbowkit-siwe-next-auth": "^0.4.1",
     "@tanstack/react-query": "^5.51.11",

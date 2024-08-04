@@ -60,20 +60,21 @@ const App = () => {
         
       </div>
 
-      <div className='heading'>
+      <div className="heading">
         <h1>Create ZKPs of Attestations</h1>
       </div>
 
-      <div className='input'>
-        <div className='input-uid'>
-          <label>Enter UID:</label>
-          <input type="text" id="fname" name="fname" placeholder='UID' />
+      <div className="zkp-container">
+        <div className="input-container">
+          <div className="input-uid-text">
+            <label>Enter UID:</label>
+          </div>
+
+          <input type="text" id="fname" name="fname" placeholder="UID" />
         </div>
 
-        <div className='submit-uid'>
-          <button onClick={fetchAttestationData}>
-            Create Proof
-          </button>
+        <div className="submit-uid">
+          <button>Generate ZK Proof</button>
         </div>
       </div>
     </div>
