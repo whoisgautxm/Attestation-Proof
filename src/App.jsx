@@ -7,18 +7,12 @@ import { useEthersProvider } from "./client_to_provider";
 import { IDKitWidget, VerificationLevel } from "@worldcoin/idkit";
 import { fetchSchemaRecord } from "./schema_data";
 import { ethers, AbiCoder, getBytes } from "ethers";
-
-// Updated import statement
+import { saveAs } from "file-saver"; // Import file-saver
 
 const App = () => {
-  // ================== Constants ==================
-
   const [uid, setUid] = useState(""); // State to store UID
   const [openWidget, setOpenWidget] = useState(false); // State to control widget opening
   const provider = useEthersProvider({ chainId: 11155111 }); // Get the provider
-
-  const raw_data =
-    "0x0000000000000000000000009f2de3a03c24e5ebd99a478ac93dd2e6772f2f2f0000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000014072616e646f6d206d656469612075726c0000000000000000000000000000000000000000000000000000000000000000000000000000000000005af3107a400000000000000000000000000000000000000000000000000000000000000000006c41a285b2891172448082fe76fba0444a63353ddfa7ebcba33d941539d1a2d400000000000000000000000000000000000000000000000000000000000001c0000000000000000000000000000000000000000000000000000000000000001141206e65772061727469636c6520322e300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000042697066733a2f2f6261666b7265696669346e6e326c346c6e6c6f73326d366270777775677074747a71756d7a646a64616b32337471326c6d696f64656e637a6877650000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
 
   // ================== Functions ==================
 
@@ -59,18 +53,23 @@ const App = () => {
     return formattedResult;
   }
 
+  // Function to save JSON data
+  const saveJSON = (data) => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    saveAs(blob, "formattedResult.json");
+  };
+
   // Function to fetch attestation data
   const fetchAttestationData = async (uid) => {
     if (provider) {
       try {
-        const attest_data = await attestation_data(uid, provider);
+        const { schemaUID, attest_data } = await attestation_data(uid, provider);
         setOpenWidget(true); // Open the widget after fetching attestation data
-        const schemaRecord = await fetchSchemaRecord(provider, attest_data);
-        console.log("schemma is ", schemaRecord);
-        parseSchema(schemaRecord);
+        const schemaRecord = await fetchSchemaRecord(provider, schemaUID);
+        console.log("schema is ", schemaRecord);
         const abiTypes = parseSchema(schemaRecord);
-        const decodedData = decodeData(abiTypes, raw_data);
-        console.log("Decoded Data:", decodedData);
+        const decodedData = decodeData(abiTypes, attest_data);
+        saveJSON(decodedData); // Save formatted result as JSON
       } catch (error) {
         console.error("Error fetching attestation data:", error);
       }
@@ -111,7 +110,6 @@ const App = () => {
   };
 
   return (
-    
     <div className="main-app">
       <div className="connect-button">
         <ConnectButton />
@@ -159,7 +157,6 @@ const App = () => {
         </IDKitWidget>
       )} */}
     </div>
-    
   );
 };
 
