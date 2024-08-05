@@ -6,19 +6,56 @@ import { attestation_data } from "./attestation_data";
 import { useEthersProvider } from './client_to_provider';
 import { IDKitWidget, VerificationLevel } from '@worldcoin/idkit';
 import { fetchSchemaRecord } from "./schema_data";
-import { ethers } from "ethers";
+import { ethers, AbiCoder, getBytes } from "ethers";
 
 
-
+ // Updated import statement
 
 const App = () => {
   const [uid, setUid] = useState("");
   const [openWidget, setOpenWidget] = useState(false); // State to control widget opening
   const provider = useEthersProvider({ chainId: 11155111 });
 
-  
-  const raw_data = "0x0000000000000000000000009f2de3a03c24e5ebd99a478ac93dd2e6772f2f2f0000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000016072616e646f6d206d656469612075726c0000000000000000000000000000000000000000000000000000000000000000000000000000000000005af3107a400000000000000000000000000000000000000000000000000000000000000000006c41a285b2891172448082fe76fba0444a63353ddfa7ebcba33d941539d1a2d400000000000000000000000000000000000000000000000000000000000001e00000000000000000000000000000000000000000000000000000000000000023416e2061727469636c652061626f7574204f6c6173206f6e203372642041756775737400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000042697066733a2f2f6261666b7265696673646f376869783268696a637368767a6e6378617a7161757578636b6a7165726e7175726534377163687275353779366b76610000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+  function parseSchema(schemaRecord) {
+    const parts = schemaRecord.split(',').map(part => part.trim());
+    const abiTypes = parts.map(part => {
+      const [type, name] = part.split(' ').map(p => p.trim());
+      return type;
+    });
+    console.log("abi" , abiTypes);
+    return abiTypes;
+  }
 
+  function decodeData(abiTypes, data) {
+
+    const coder = new AbiCoder();
+    const bytes = getBytes(data);
+    console.log("bytes is", bytes);
+    const decodedResult = coder.decode(abiTypes, bytes);
+    console.log("decoded result is", decodedResult);
+  
+    // Convert the decoded result to a more readable format
+    const formattedResult = decodedResult.map(item => {
+      if (typeof item === 'bigint') {
+        return item.toString();
+      } else if (item instanceof Uint8Array) {
+        return ethers.hexlify(item);
+      } else if (Array.isArray(item)) {
+        return item.map(subItem => 
+          typeof subItem === 'bigint' ? subItem.toString() : subItem
+        );
+      } else {
+        return item.toString();
+      }
+    });
+  
+    console.log("Decoded Data:", formattedResult);
+    return formattedResult;
+  }
+  
+  
+
+  const raw_data = "0x0000000000000000000000009f2de3a03c24e5ebd99a478ac93dd2e6772f2f2f0000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000014072616e646f6d206d656469612075726c0000000000000000000000000000000000000000000000000000000000000000000000000000000000005af3107a400000000000000000000000000000000000000000000000000000000000000000006c41a285b2891172448082fe76fba0444a63353ddfa7ebcba33d941539d1a2d400000000000000000000000000000000000000000000000000000000000001c0000000000000000000000000000000000000000000000000000000000000001141206e65772061727469636c6520322e300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000042697066733a2f2f6261666b7265696669346e6e326c346c6e6c6f73326d366270777775677074747a71756d7a646a64616b32337471326c6d696f64656e637a6877650000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
 
   const fetchAttestationData = async (uid) => {
     if (provider) {
@@ -27,23 +64,19 @@ const App = () => {
         setOpenWidget(true); // Open the widget after fetching attestation data
         const schemaRecord = await fetchSchemaRecord(provider , attest_data);
         console.log("schemma is " , schemaRecord);
+        parseSchema(schemaRecord);
+        const abiTypes = parseSchema(schemaRecord);
+        const decodedData = decodeData(abiTypes, raw_data);
+        console.log("Decoded Data:", decodedData);
 
-        function parseSchema(schemaRecord) {
-          const parts = schemaRecord.split(',').map(part => part.trim());
-          const abiTypes = parts.map(part => {
-            const [type, name] = part.split(' ').map(p => p.trim());
-            return type;
-          });
-          console.log("abi" , abiTypes);
-          return abiTypes;
-          
-        }
-        
         // Function to decode data using the parsed schema
-        function decodeData(schemaRecord, raw_data) {
-          const abiTypes = parseSchema(schemaRecord);
-          return ethers.utils.defaultAbiCoder.decode(abiTypes, raw_data);
-        }
+        // function decodeData(schemaRecord, raw_data) {
+        //   const abiTypes = parseSchema(schemaRecord);
+        //   return ethers.utils.defaultAbiCoder.decode(abiTypes, raw_data);
+        // }
+
+        // const decodedData = decodeData(schemaRecord, raw_data);
+        // console.log("Decoded Data:", decodedData);
 
       } catch (error) {
         console.error("Error fetching attestation data:", error);
@@ -52,8 +85,6 @@ const App = () => {
       console.error("Provider is not available");
     }
   };
-
-
 
   // Function to verify the proof
   const verifyProof = async (proof) => {
