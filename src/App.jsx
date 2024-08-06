@@ -16,42 +16,43 @@ const App = () => {
 
   // ================== Functions ==================
 
-  // fetching schema and converting it to an array
   function parseSchema(schemaRecord) {
     const parts = schemaRecord.split(",").map((part) => part.trim());
     const abiTypes = parts.map((part) => {
       const [type, name] = part.split(" ").map((p) => p.trim());
-      return type;
+      return { type, name };
     });
     console.log("abi", abiTypes);
     return abiTypes;
   }
 
-  // Decoding the raw data using the schema
   function decodeData(abiTypes, raw_data) {
     const coder = new AbiCoder(); // Create a new AbiCoder instance
     const bytes = getBytes(raw_data); // Convert the raw data to bytes
     console.log("bytes is", bytes); // Print the bytes
-    const decodedResult = coder.decode(abiTypes, bytes); // Decode the data
+    const decodedResult = coder.decode(abiTypes.map(item => item.type), bytes); // Decode the data
 
-    // Convert the decoded result to a more readable format
-    const formattedResult = decodedResult.map((item) => {
-      if (typeof item === "bigint") {
-        return item.toString();
-      } else if (item instanceof Uint8Array) {
-        return ethers.hexlify(item);
-      } else if (Array.isArray(item)) {
-        return item.map((subItem) =>
+    // Map the schema field names to the decoded data
+    const formattedResult = abiTypes.reduce((acc, { name }, index) => {
+      acc[name] = decodedResult[index];
+      if (typeof acc[name] === "bigint") {
+        acc[name] = acc[name].toString();
+      } else if (acc[name] instanceof Uint8Array) {
+        acc[name] = ethers.hexlify(acc[name]);
+      } else if (Array.isArray(acc[name])) {
+        acc[name] = acc[name].map((subItem) =>
           typeof subItem === "bigint" ? subItem.toString() : subItem
         );
       } else {
-        return item.toString();
+        acc[name] = acc[name].toString();
       }
-    });
+      return acc;
+    }, {});
 
     console.log("Decoded Data:", formattedResult);
     return formattedResult;
   }
+
 
   // Function to save JSON data
   const saveJSON = (data) => {
