@@ -8,7 +8,6 @@ import { IDKitWidget, VerificationLevel } from "@worldcoin/idkit";
 import { fetchSchemaRecord } from "./schema_data";
 import { ethers, AbiCoder, getBytes } from "ethers";
 import { saveAs } from "file-saver"; // Import file-saver
-import { saveAs } from "file-saver"; // Import file-saver
 
 const App = () => {
   const [uid, setUid] = useState(""); // State to store UID
