@@ -17,6 +17,7 @@
     "@worldcoin/idkit": "^1.2.2",
     "clsx": "^2.1.1",
     "ethers": "^6.13.2",
+    "file-saver": "^2.0.5",
     "framer-motion": "^11.3.21",
     "mini-svg-data-uri": "^1.4.4",
     "react": "^18.3.0",

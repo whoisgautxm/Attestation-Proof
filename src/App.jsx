@@ -7,18 +7,12 @@ import { useEthersProvider } from "./client_to_provider";
 import { IDKitWidget, VerificationLevel } from "@worldcoin/idkit";
 import { fetchSchemaRecord } from "./schema_data";
 import { ethers, AbiCoder, getBytes } from "ethers";
-
-// Updated import statement
+import { saveAs } from "file-saver"; // Import file-saver
 
 const App = () => {
-  // ================== Constants ==================
-
   const [uid, setUid] = useState(""); // State to store UID
   const [openWidget, setOpenWidget] = useState(false); // State to control widget opening
   const provider = useEthersProvider({ chainId: 11155111 }); // Get the provider
-
-  const raw_data =
-    "3274528374592";
 
   // ================== Functions ==================
 
@@ -59,18 +53,23 @@ const App = () => {
     return formattedResult;
   }
 
+  // Function to save JSON data
+  const saveJSON = (data) => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    saveAs(blob, "formattedResult.json");
+  };
+
   // Function to fetch attestation data
   const fetchAttestationData = async (uid) => {
     if (provider) {
       try {
-        const attest_data = await attestation_data(uid, provider);
+        const { schemaUID, attest_data } = await attestation_data(uid, provider);
         setOpenWidget(true); // Open the widget after fetching attestation data
-        const schemaRecord = await fetchSchemaRecord(provider, attest_data);
-        console.log("schemma is ", schemaRecord);
-        parseSchema(schemaRecord);
+        const schemaRecord = await fetchSchemaRecord(provider, schemaUID);
+        console.log("schema is ", schemaRecord);
         const abiTypes = parseSchema(schemaRecord);
-        const decodedData = decodeData(abiTypes, raw_data);
-        console.log("Decoded Data:", decodedData);
+        const decodedData = decodeData(abiTypes, attest_data);
+        saveJSON(decodedData); // Save formatted result as JSON
       } catch (error) {
         console.error("Error fetching attestation data:", error);
       }

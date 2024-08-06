@@ -11,8 +11,9 @@ export const attestation_data = async (uid, provider) => {
   const attestation = await eas.getAttestation(uid);
 
   const schemaUID = attestation.schema;
+  const attest_data = attestation.data;
 
 //   console.log(attestation);
 
-  return schemaUID;
+  return {schemaUID, attest_data};
 };
