@@ -79,7 +79,7 @@ const App = () => {
     }
   };
 
-  // Function to verify the proof
+  // Function to verify the WorldCoin ID
   const verifyProof = async (proof) => {
     console.log("proof", proof);
     const response = await fetch(
