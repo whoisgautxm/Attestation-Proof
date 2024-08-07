@@ -7,7 +7,8 @@ import { useEthersProvider } from "./client_to_provider";
 import { IDKitWidget, VerificationLevel } from "@worldcoin/idkit";
 import { fetchSchemaRecord } from "./schema_data";
 import { ethers, AbiCoder, getBytes } from "ethers";
-import { saveAs } from "file-saver"; // Import file-saver
+// Import file-saver (no longer needed with server-side saving)
+// import { saveAs } from "file-saver"; 
 
 const App = () => {
   const [uid, setUid] = useState(""); // State to store UID
@@ -53,11 +54,27 @@ const App = () => {
     return formattedResult;
   }
 
-
-  // Function to save JSON data
+  // Function to save JSON data to the server
   const saveJSON = (data) => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    saveAs(blob, "formattedResult.json");
+    fetch('http://localhost:3001/save-json', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.text();
+      })
+      .then((text) => {
+        console.log(text);
+      })
+      .catch((error) => {
+        console.error('Error saving JSON data:', error);
+      });
   };
 
   // Function to fetch attestation data
@@ -70,7 +87,7 @@ const App = () => {
         console.log("schema is ", schemaRecord);
         const abiTypes = parseSchema(schemaRecord);
         const decodedData = decodeData(abiTypes, attest_data);
-        saveJSON(decodedData); // Save formatted result as JSON
+        saveJSON(decodedData); // Save formatted result as JSON to the server
       } catch (error) {
         console.error("Error fetching attestation data:", error);
       }
