@@ -1,6 +1,5 @@
 {
-  "testApplied": "algo",
-  "type": "algo",
-  "result": "4",
-  "date": "1723438800000"
-} 
+  "programHash": "7e6d37e239b47e769809bf44e3f197aefa473254d05ec3f532e72c48d343d33e",
+  "publicInput": "[123]",
+  "output": "315"
+}

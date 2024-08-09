@@ -12,8 +12,10 @@ export const attestation_data = async (uid, provider) => {
 
   const schemaUID = attestation.schema;
   const attest_data = attestation.data;
+  const recipient = attestation.recipient;
+  const attester = attestation.attester;
 
 //   console.log(attestation);
 
-  return {schemaUID, attest_data};
+  return {schemaUID, attest_data, recipient, attester};
 };
