@@ -20,19 +20,21 @@ use alloy_primitives::U256;
 use alloy_sol_types::{sol, SolInterface, SolValue};
 use anyhow::{Context, Result};
 use clap::Parser;
+use dotenv::dotenv; // Import dotenv
 use ethers::prelude::*;
 use methods::IS_EVEN_ELF;
 use risc0_ethereum_contracts::groth16;
 use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
 use risc0_zkvm::sha::Digest;
 
+
 // `IEvenNumber` interface automatically generated via the alloy `sol!` macro.
 sol! {
     interface IEvenNumber {
-        function set(uint256 x, bytes calldata seal);
+        function set(Digest hash, bytes calldata seal);
     }
 }
-
+ 
 /// Wrapper of a `SignerMiddleware` client to send transactions to the given
 /// contract's `Address`.
 pub struct TxSender {
@@ -74,11 +76,11 @@ impl TxSender {
     }
 }
 
-/// Arguments of the publisher CLI.
+// Arguments of the publisher CLI.
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
-    /// Ethereum chain ID
+    // Ethereum chain ID
     #[clap(long)]
     chain_id: u64,
 
@@ -98,7 +100,19 @@ struct Args {
 fn main() -> Result<()> {
     env_logger::init();
     // Parse CLI Arguments: The application starts by parsing command-line arguments provided by the user.
-    let args = Args::parse();
+    // let args = Args::parse();
+
+    dotenv::dotenv().ok();
+
+        // Parse CLI Arguments: The application starts by parsing command-line arguments provided by the user.
+        let args = Args {
+            chain_id: std::env::var("CHAIN_ID")?.parse()?, // {{ edit_2 }}
+            eth_wallet_private_key: std::env::var("ETH_WALLET_PRIVATE_KEY")?, // {{ edit_3 }}
+            rpc_url: std::env::var("RPC_URL")?, // {{ edit_4 }}
+            contract: std::env::var("CONTRACT")?, // {{ edit_5 }}
+        };
+
+    
 
     // Create a new transaction sender using the parsed arguments.
     let tx_sender = TxSender::new(
@@ -110,7 +124,11 @@ fn main() -> Result<()> {
 
     let data = include_str!("../../../../formattedResult.json");
 
-    let env = ExecutorEnv::builder().write_slice(&data).build()?;
+    let env = ExecutorEnv::builder()
+    .write(&data)
+    .unwrap()
+    .build()
+    .unwrap();
 
     let receipt = default_prover()
         .prove_with_ctx(

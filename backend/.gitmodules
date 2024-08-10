@@ -1,3 +1,7 @@
 [submodule "risc0-foundry"]
 	path = risc0-foundry
 	url = https://github.com/whoisgautxm/risc0-foundry.git
+
+[submodule "risc0"]
+	path = risc0
+	url = https://github.com/Shivannsh/risc0.git
