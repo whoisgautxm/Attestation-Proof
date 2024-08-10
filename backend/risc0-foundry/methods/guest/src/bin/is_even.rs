@@ -1,35 +1,54 @@
-// Copyright 2023 RISC Zero, Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+use json_core::Outputs;
+use risc0_zkvm::{
+    guest::env,
+    sha::{Impl, Sha256, Digest},
+};
 
-use std::io::Read;
+fn hash_json_key(key: &str) -> Digest {
+    *Impl::hash_bytes(key.as_bytes())
+}
 
-use alloy_primitives::U256;
-use alloy_sol_types::SolValue;
-use risc0_zkvm::guest::env;
+fn compute_merkle_root(hashes: &[Digest]) -> Digest {
+    if hashes.is_empty() {
+        return Digest::default();
+    }
+    if hashes.len() == 1 {
+        return hashes[0];
+    }
+    let mut next_level = Vec::new();
+    for chunk in hashes.chunks(2) {
+        if chunk.len() == 2 {
+            let combined = [chunk[0].as_bytes(), chunk[1].as_bytes()].concat();
+            next_level.push(*Impl::hash_bytes(&combined));
+        } else {
+            next_level.push(chunk[0]);
+        }
+    }
+    compute_merkle_root(&next_level)
+}
 
 fn main() {
-    // Read the input data for this application.
-    let mut input_bytes = Vec::<u8>::new();
-    env::stdin().read_to_end(&mut input_bytes).unwrap();
-    // Decode and parse the input
-    let number = <U256>::abi_decode(&input_bytes, true).unwrap();
+    let data: String = env::read();
+    let json_data = json::parse(&data).unwrap();
 
-    // Run the computation.
-    // In this case, asserting that the provided number is even.
-    assert!(!number.bit(0), "number is not even");
+    let mut field_names = Vec::new();
+    let mut field_hashes = Vec::new();
 
-    // Commit the journal that will be received by the application contract.
-    // Journal is encoded using Solidity ABI for easy decoding in the app contract.
-    env::commit_slice(number.abi_encode().as_slice());
+    if let json::JsonValue::Object(obj) = json_data {
+        for (key, _) in obj.iter() {
+            field_names.push(key.to_string());
+            let field_hash = hash_json_key(key);
+            field_hashes.push(field_hash);
+        }
+    } else {
+        panic!("Expected JSON object");
+    }
+
+    let merkle_root = compute_merkle_root(&field_hashes);
+
+    let out = Outputs {
+        data: field_names,
+        hash: merkle_root,
+    };
+    env::commit(&out);
 }

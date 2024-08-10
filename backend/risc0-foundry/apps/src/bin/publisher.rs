@@ -1,23 +1,35 @@
+// Copyright 2024 RISC Zero, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// This application demonstrates how to send an off-chain proof request
+// to the Bonsai proving service and publish the received proofs directly
+// to your deployed app contract.
+
 use alloy_primitives::U256;
 use alloy_sol_types::{sol, SolInterface, SolValue};
 use anyhow::{Context, Result};
 use clap::Parser;
 use ethers::prelude::*;
-use serde_json::Value;
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::fs;
-use std::path::Path;
+use methods::IS_EVEN_ELF;
 use risc0_ethereum_contracts::groth16;
 use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
+use risc0_zkvm::sha::Digest;
 
-// Use a HashMap to represent the JSON data dynamically.
-type JsonData = HashMap<String, String>;
-
-// `IAppContract` interface automatically generated via the alloy `sol!` macro.
+// `IEvenNumber` interface automatically generated via the alloy `sol!` macro.
 sol! {
-    interface IAppContract {
-        function set(JsonData x, bytes calldata seal);
+    interface IEvenNumber {
+        function set(uint256 x, bytes calldata seal);
     }
 }
 
@@ -81,16 +93,6 @@ struct Args {
     /// Application's contract address on Ethereum
     #[clap(long)]
     contract: String,
-
-    /// Path to the JSON file
-    #[clap(short, long)]
-    json_file: String,
-}
-
-fn read_json_file<P: AsRef<Path>>(path: P) -> Result<JsonData> {
-    let file_content = fs::read_to_string("../formattedResult.json")?;
-    let data: JsonData = serde_json::from_str(&file_content)?;
-    Ok(data)
 }
 
 fn main() -> Result<()> {
@@ -106,20 +108,15 @@ fn main() -> Result<()> {
         &args.contract,
     )?;
 
-    // Read the JSON data from the file
-    let json_data = read_json_file(args.json_file)?;
+    let data = include_str!("../../../../formattedResult.json");
 
-    // ABI encode input: Before sending the proof request to the Bonsai proving service,
-    // the input number is ABI-encoded to match the format expected by the guest code running in the zkVM.
-    let input = serde_json::to_vec(&json_data)?;
-
-    let env = ExecutorEnv::builder().write_slice(&input).build()?;
+    let env = ExecutorEnv::builder().write_slice(&data).build()?;
 
     let receipt = default_prover()
         .prove_with_ctx(
             env,
             &VerifierContext::default(),
-            IS_EVEN_ELF, // Replace this with the appropriate binary or logic for your use case
+            IS_EVEN_ELF,
             &ProverOpts::groth16(),
         )?
         .receipt;
@@ -133,13 +130,15 @@ fn main() -> Result<()> {
     // Decode Journal: Upon receiving the proof, the application decodes the journal to extract
     // the verified number. This ensures that the number being submitted to the blockchain matches
     // the number that was verified off-chain.
-    let x: JsonData = serde_json::from_slice(&journal).context("decoding journal data")?;
+    // let x = U256::abi_decode(&journal, true).context("decoding journal data")?;
 
-    // Construct function call: Using the IAppContract interface, the application constructs
-    // the ABI-encoded function call for the set function of the AppContract.
+    let hash = journal.decode::<Digest>()?;
+
+    // Construct function call: Using the IEvenNumber interface, the application constructs
+    // the ABI-encoded function call for the set function of the EvenNumber contract.
     // This call includes the verified number, the post-state digest, and the seal (proof).
-    let calldata = IAppContract::IAppContractCalls::set(IAppContract::setCall {
-        x,
+    let calldata = IEvenNumber::IEvenNumberCalls::set(IEvenNumber::setCall {
+        hash,
         seal: seal.into(),
     })
     .abi_encode();
@@ -148,7 +147,7 @@ fn main() -> Result<()> {
     let runtime = tokio::runtime::Runtime::new()?;
 
     // Send transaction: Finally, the TxSender component sends the transaction to the Ethereum blockchain,
-    // effectively calling the set function of the AppContract with the verified number and proof.
+    // effectively calling the set function of the EvenNumber contract with the verified number and proof.
     runtime.block_on(tx_sender.send(calldata))?;
 
     Ok(())

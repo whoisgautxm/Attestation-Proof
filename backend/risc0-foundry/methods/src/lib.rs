@@ -37,7 +37,7 @@ mod tests {
         assert_eq!(x, even_number);
     }
 
-    #[test]
+    #[test] 
     #[should_panic(expected = "number is not even")]
     fn rejects_odd_number() {
         let odd_number = U256::from(75);
