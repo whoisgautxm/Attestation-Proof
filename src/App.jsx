@@ -91,7 +91,8 @@ const App = () => {
       try {
         const { schemaUID, attest_data, recipient, attester } = await attestation_data(uid, provider);
 
-        if (account.address === attester || account.address === recipient) {
+        // if (account.address === attester || account.address === recipient) {
+        if (true) {
           setOpenWidget(true); // Open the widget after fetching attestation data
           const schemaRecord = await fetchSchemaRecord(provider, schemaUID);
           console.log("schema is ", schemaRecord);
