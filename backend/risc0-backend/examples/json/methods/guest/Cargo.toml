@@ -11,3 +11,5 @@ json-core = { path = "../../core" }
 risc0-zkvm = { path = "../../../../risc0/zkvm", default-features = false, features = [
   "std",
 ] }
+rs_merkle = "1.4"
+sha2 = "0.10"

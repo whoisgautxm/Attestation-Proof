@@ -17,14 +17,15 @@ use json_methods::SEARCH_JSON_ELF;
 use risc0_zkvm::{default_prover, ExecutorEnv};
 
 fn main() {
-    let data = include_str!("../res/example.json");
+    let data = include_str!("../../../../formattedResult.json");
     let outputs = search_json(data);
     println!();
     println!("  {:?}", outputs.hash);
     println!(
-        "provably contains a field 'critical_data' with value {}",
+        "provably contains a fields: {:?}",
         outputs.data
     );
+
 }
 
 fn search_json(data: &str) -> Outputs {
@@ -45,13 +46,46 @@ fn search_json(data: &str) -> Outputs {
 
 #[cfg(test)]
 mod tests {
+    use super::search_json;
+    use risc0_zkvm::sha::{Impl, Sha256, Digest};
+
     #[test]
     fn main() {
-        let data = include_str!("../res/example.json");
-        let outputs = super::search_json(data);
-        assert_eq!(
-            outputs.data, 47,
-            "Did not find the expected value in the critical_data field"
-        );
+        let data = include_str!("../../../../../formattedResult.json");
+        let outputs = search_json(data);
+        // let expected_fields = vec!["boolean_field", "critical_data", "obj_field"];
+
+        // // Verify that the output contains the expected fields
+        // assert_eq!(outputs.data, expected_fields, "Field names do not match");
+
+        // Calculate the Merkle root
+        let field_hashes: Vec<Digest> = expected_fields
+            .iter()
+            .map(|s| *Impl::hash_bytes(s.as_bytes()))
+            .collect();
+
+        fn compute_merkle_root(hashes: &[Digest]) -> Digest {
+            if hashes.is_empty() {
+                return Digest::default();
+            }
+            if hashes.len() == 1 {
+                return hashes[0];
+            }
+            let mut next_level = Vec::new();
+            for chunk in hashes.chunks(2) {
+                if chunk.len() == 2 {
+                    let combined = [chunk[0].as_bytes(), chunk[1].as_bytes()].concat();
+                    next_level.push(*Impl::hash_bytes(&combined));
+                } else {
+                    next_level.push(chunk[0]);
+                }
+            }
+            compute_merkle_root(&next_level)
+        }
+
+        let calculated_root = compute_merkle_root(&field_hashes);
+
+        // Assert that the calculated hash matches the output hash
+        assert_eq!(outputs.hash, calculated_root, "Merkle root hashes do not match");
     }
 }

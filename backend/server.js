@@ -30,7 +30,7 @@ app.post('/save-json', (req, res) => {
 
 // Function to generate ZKP
 function generateZKP(jsonFilePath, res) {
-  const repoPath = '/Users/shivanshgupta/Desktop/Attestation-Proof/backend/risc0/examples/json'; // Update this to the actual path of your Risc0 repo
+  const repoPath = './risc0-backend/examples/json'; // Update this to the actual path of your Risc0 repo
 
   // Run cargo build
   exec('cargo build', { cwd: repoPath }, (err, stdout, stderr) => {
