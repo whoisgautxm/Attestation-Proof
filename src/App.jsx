@@ -1,22 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { getAccount } from "@wagmi/core";
-import { config } from "./wagmi";
+import { useAccount } from 'wagmi'; // Import useAccount hook
 import { attestation_data } from "./attestation_data";
 import { useEthersProvider } from "./client_to_provider";
 import { IDKitWidget, VerificationLevel } from "@worldcoin/idkit";
 import { fetchSchemaRecord } from "./schema_data";
 import { ethers, AbiCoder, getBytes } from "ethers";
 import Loader from "./components/loader/Loader";
-// Import file-saver (no longer needed with server-side saving)
-// import { saveAs } from "file-saver"; 
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import Logo from "./assets/zka_logo.svg";
 
 const App = () => {
   const [uid, setUid] = useState(""); // State to store UID
   const [openWidget, setOpenWidget] = useState(false); // State to control widget opening
-  const [errorMessage, setErrorMessage] = useState(""); // State to store the error message
+  const [errorMessage, setErrorMessage] = useState(""); // State to store error messages
+  const [isDataFetching, setIsDataFetching] = useState(false); // State to control loader visibility
   const provider = useEthersProvider({ chainId: 11155111 }); // Get the provider
-  const account = getAccount(config);
+  const { address, isConnected } = useAccount(); // Use useAccount hook to get the account and connection status
+  const [isWalletConnected, setIsWalletConnected] = useState(false);
+
+  useEffect(() => {
+    setIsWalletConnected(isConnected);
+  }, [isConnected]);
 
   // ================== Functions ==================
 
@@ -85,31 +91,36 @@ const App = () => {
 
   // Function to fetch attestation data
   const fetchAttestationData = async (uid) => {
+    if (!isWalletConnected) {
+      toast.error("Please connect your wallet");
+      return;
+    }
+
     console.log("uid", uid);
-    console.log("account", account);
+    console.log("account", address);
     if (provider) {
       try {
         const { schemaUID, attest_data, recipient, attester } = await attestation_data(uid, provider);
 
-        // if (account.address === attester || account.address === recipient) {
-        if(true){
+        // if (address === attester || address === recipient) {
+        if (true) {
           setOpenWidget(true); // Open the widget after fetching attestation data
           const schemaRecord = await fetchSchemaRecord(provider, schemaUID);
           console.log("schema is ", schemaRecord);
           const abiTypes = parseSchema(schemaRecord);
           const decodedData = decodeData(abiTypes, attest_data);
           saveJSON(decodedData); // Save formatted result as JSON to the server
-          setErrorMessage(""); // Clear any previous error message
+          setIsDataFetching(true); // Show loader permanently after the first request
         } else {
-          setErrorMessage("You are not the attester or recipient of this attestation");
+          toast.error("You are not the attester or recipient of this attestation");
         }
       } catch (error) {
         console.error("Error fetching attestation data:", error);
-        setErrorMessage("An error occurred while fetching the attestation data.");
+        toast.error("Please enter a valid UID");
       }
     } else {
       console.error("Provider is not available");
-      setErrorMessage("Provider is not available");
+      toast.error("Provider is not available");
     }
   };
 
@@ -139,7 +150,7 @@ const App = () => {
   const onSuccess = (result) => {
     window.alert(
       `Successfully verified with World ID! Your nullifier hash is: ` +
-        result.nullifier_hash
+      result.nullifier_hash
     );
     setOpenWidget(false); // Close the widget after success
   };
@@ -148,13 +159,19 @@ const App = () => {
     <div className="grid-background">
       <div className="gradient-overlay"></div>
       <div className="main-app">
-        <div className="connect-button">
-          <ConnectButton />
+        <div className="navbar">
+          <div className="logo-container">
+            <img src={Logo} alt="ZKA Logo" />
+          </div>
+          <div className="connect-button">
+            <ConnectButton />
+          </div>
         </div>
 
         <div className="heading">
           <h1>Create ZKPs of Attestations</h1>
         </div>
+
 
         <div className="zkp-container">
           <div className="input-container">
@@ -171,16 +188,26 @@ const App = () => {
             />
           </div>
 
-          {errorMessage && <div className="error-message">{errorMessage}</div>} {/* Display the error message */}
-
           <div className="submit-uid">
-            <button onClick={() => fetchAttestationData(uid)}>
+            <button
+              onClick={() => fetchAttestationData(uid)}
+            >
               Generate ZK Proof
             </button>
           </div>
         </div>
 
-        {/* {openWidget && (
+        {errorMessage && (
+          <div className="error-message">
+            <p>{errorMessage}</p>
+          </div>
+        )}
+
+        {/* Loader should be visible permanently after the first request */}
+        {isDataFetching && <Loader />}
+
+        {/* 
+        {openWidget && (
           <IDKitWidget
             app_id="app_staging_79bf4c6cc4665f623a18b40b1a4bc286"
             action="gautam"
@@ -194,9 +221,20 @@ const App = () => {
               </button>
             )}
           </IDKitWidget>
-        )} */}
+        )} 
+        */}
 
-        <Loader />
+        <ToastContainer
+          position="bottom-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+        />
       </div>
     </div>
   );

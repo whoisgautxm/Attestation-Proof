@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap');
 
 body {
-  background-color: black;
+  background: radial-gradient(circle at 24.1% 68.8%, rgb(50, 50, 50) 0%, rgb(0, 0, 0) 99.4%);
   margin: 0;
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -19,9 +19,17 @@ body {
 .heading {
   color: white;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   gap: 10px;
+}
+
+.subheading {
+  color: rgb(255, 255, 255); /* Optional: color to make the message stand out */
+  font-size: 1.3rem;
+  margin-top: 10px;
+  text-align: center; /* Optional: center-align the text */
 }
 
 .heading h1 {
@@ -37,6 +45,26 @@ body {
   width: 100%;
   height: 20%;
   font-family: "Space Grotesk", sans-serif;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 60px;
+}
+
+.logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 60px;
+  padding: 0 100px;
+}
+
+.logo-container img {
+  width: 100%;
+  height: 100%;
 }
 
 .input-container {
@@ -59,7 +87,7 @@ body {
   border-radius: 5px;
   font-size: large;
   font-family: "Space Grotesk", sans-serif;
-
+  outline: none;
 }
 
 .input-uid-text{
@@ -68,6 +96,9 @@ body {
 }
 
 .error-message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   color: #ff7e7e;
   font-size: 1.25rem;
   /* font-family: "Space Grotesk", sans-serif; */
@@ -91,13 +122,21 @@ body {
 .connect-button {
   display: flex;
   justify-content: flex-end;
-  padding: 20px;
+  padding: 20px 100px;
 }
+
+
+.disabled-button {
+  cursor: not-allowed;
+  background-color: #ccc; /* Optional: to give visual feedback */
+  color: #666; /* Optional: to make the button look disabled */
+}
+
 
 .grid-background {
   /* height: 50rem; */
   width: 100%;
-  background-color: black;
+  background: radial-gradient(circle at 24.1% 68.8%, rgb(50, 50, 50) 0%, rgb(0, 0, 0) 99.4%);
   background-image: radial-gradient(rgba(255, 255, 255, 0.2) 1px, transparent 1px);
   background-size: 40px 40px;
   position: relative;
@@ -113,9 +152,6 @@ body {
   /* display: flex; */
   align-items: center;
   justify-content: center;
-  background-color: black;
-  mask-image: radial-gradient(ellipse at center, transparent 20%, black);
-  -webkit-mask-image: radial-gradient(ellipse at center, transparent 20%, black);
 }
 
 
