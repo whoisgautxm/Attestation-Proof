@@ -1,4 +1,0 @@
-[submodule "risc0-foundry"]
-	path = risc0-foundry
-	url = https://github.com/whoisgautxm/risc0-foundry.git
-
