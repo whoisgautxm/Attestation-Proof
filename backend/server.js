@@ -1,9 +1,9 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-const cors = require("cors");
-const fs = require("fs");
-const path = require("path");
-const { exec } = require("child_process");
+const express = require('express');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
+const { exec } = require('child_process');
 
 const app = express();
 const PORT = 3001;
@@ -12,20 +12,39 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // Endpoint to save JSON file and generate ZKP
-app.post("/save-json", (req, res) => {
+app.post('/save-json', (req, res) => {
   const jsonData = req.body;
-  const filePath = path.join(__dirname, "formattedResult.json");
+  const filePath = path.join(__dirname, 'formattedResult.json');
 
   // Save the JSON file
   fs.writeFile(filePath, JSON.stringify(jsonData, null, 2), (err) => {
     if (err) {
-      console.error("Error saving JSON file:", err);
-      return res.status(500).send("Error saving JSON file");
+      console.error('Error saving JSON file:', err);
+      return res.status(500).send('Error saving JSON file');
     }
 
     // If JSON is saved successfully, proceed to generate ZKP
     generateZKP(filePath, res);
   });
+});
+
+app.post('/verify-proof', (req, res) => {
+  const { proof, merkle_root, nullifier_hash, verification_level } = req.body;
+
+  // Log received proof data for debugging
+  console.log('Received proof data:', { proof, merkle_root, nullifier_hash, verification_level });
+
+  // Here, add your logic to verify the proof
+  // For example, you could send the proof to an external API or verify it using a smart contract
+
+  // Mock verification response (replace this with actual verification logic)
+  const verificationSuccess = true; // Assuming the proof is verified successfully
+
+  if (verificationSuccess) {
+      res.json({ success: true, message: 'Proof verified successfully.' });
+  } else {
+      res.status(400).json({ success: false, message: 'Proof verification failed.' });
+  }
 });
 
 // Function to generate ZKP

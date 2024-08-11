@@ -1,30 +1,62 @@
 import React, { useState, useEffect } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useAccount } from 'wagmi'; // Import useAccount hook
+import { useAccount } from "wagmi";
 import { attestation_data } from "./attestation_data";
 import { useEthersProvider } from "./client_to_provider";
 import { IDKitWidget, VerificationLevel } from "@worldcoin/idkit";
 import { fetchSchemaRecord } from "./schema_data";
 import { ethers, AbiCoder, getBytes } from "ethers";
 import Loader from "./components/loader/Loader";
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Logo from "./assets/zka_logo.svg";
+import { useVerify } from "./action/verify";
 
 const App = () => {
-  const [uid, setUid] = useState(""); // State to store UID
-  const [openWidget, setOpenWidget] = useState(false); // State to control widget opening
-  const [errorMessage, setErrorMessage] = useState(""); // State to store error messages
-  const [isDataFetching, setIsDataFetching] = useState(false); // State to control loader visibility
-  const provider = useEthersProvider({ chainId: 11155111 }); // Get the provider
-  const { address, isConnected } = useAccount(); // Use useAccount hook to get the account and connection status
+  const [uid, setUid] = useState("");
+  const [openWidget, setOpenWidget] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isDataFetching, setIsDataFetching] = useState(false);
+  const provider = useEthersProvider({ chainId: 11155111 });
+  const { address, isConnected } = useAccount();
   const [isWalletConnected, setIsWalletConnected] = useState(false);
+  const { verify, verificationResult, loading, error } = useVerify();
+  const [isVerified, setIsVerified] = useState(false); // Fixed typo here
 
   useEffect(() => {
     setIsWalletConnected(isConnected);
   }, [isConnected]);
 
-  // ================== Functions ==================
+  const handleProof = async (result) => {
+    console.log("Proof received from IDKit, sending to backend:\n", JSON.stringify(result));
+
+    try {
+      const response = await fetch("http://localhost:3001/verify-proof", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(result),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Verification failed: ${errorData.message}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        console.log("Successful response from backend:\n", JSON.stringify(data));
+        onSuccess(); // Call onSuccess without arguments
+      } else {
+        throw new Error("Verification failed: Backend response was not successful.");
+      }
+    } catch (error) {
+      console.error("Error during proof verification:", error);
+      setErrorMessage("Proof verification failed. Please try again.");
+    }
+  };
 
   function parseSchema(schemaRecord) {
     const parts = schemaRecord.split(",").map((part) => part.trim());
@@ -37,15 +69,14 @@ const App = () => {
   }
 
   function decodeData(abiTypes, raw_data) {
-    const coder = new AbiCoder(); // Create a new AbiCoder instance
-    const bytes = getBytes(raw_data); // Convert the raw data to bytes
-    console.log("bytes is", bytes); // Print the bytes
+    const coder = new AbiCoder();
+    const bytes = getBytes(raw_data);
+    console.log("bytes is", bytes);
     const decodedResult = coder.decode(
       abiTypes.map((item) => item.type),
       bytes
-    ); // Decode the data
+    );
 
-    // Map the schema field names to the decoded data
     const formattedResult = abiTypes.reduce((acc, { name }, index) => {
       acc[name] = decodedResult[index];
       if (typeof acc[name] === "bigint") {
@@ -66,7 +97,6 @@ const App = () => {
     return formattedResult;
   }
 
-  // Function to save JSON data to the server
   const saveJSON = (data) => {
     fetch("http://localhost:3001/save-json", {
       method: "POST",
@@ -89,7 +119,6 @@ const App = () => {
       });
   };
 
-  // Function to fetch attestation data
   const fetchAttestationData = async (uid) => {
     if (!isWalletConnected) {
       toast.error("Please connect your wallet");
@@ -100,17 +129,20 @@ const App = () => {
     console.log("account", address);
     if (provider) {
       try {
-        const { schemaUID, attest_data, recipient, attester } = await attestation_data(uid, provider);
+        const { schemaUID, attest_data, recipient, attester } =
+          await attestation_data(uid, provider);
 
-        // if (address === attester || address === recipient) {
-        if (true) {
-          setOpenWidget(true); // Open the widget after fetching attestation data
-          const schemaRecord = await fetchSchemaRecord(provider, schemaUID);
-          console.log("schema is ", schemaRecord);
-          const abiTypes = parseSchema(schemaRecord);
-          const decodedData = decodeData(abiTypes, attest_data);
-          saveJSON(decodedData); // Save formatted result as JSON to the server
-          setIsDataFetching(true); // Show loader permanently after the first request
+        if (address === attester || address === recipient) {
+          if (!isVerified) {
+            setOpenWidget(true); // Open the widget after fetching attestation data
+          } else {
+            const schemaRecord = await fetchSchemaRecord(provider, schemaUID);
+            console.log("schema is ", schemaRecord);
+            const abiTypes = parseSchema(schemaRecord);
+            const decodedData = decodeData(abiTypes, attest_data);
+            saveJSON(decodedData);
+            setIsDataFetching(true);
+          }
         } else {
           toast.error("You are not the attester or recipient of this attestation");
         }
@@ -124,35 +156,20 @@ const App = () => {
     }
   };
 
-  // Function to verify the WorldCoin ID
-  const verifyProof = async (proof) => {
-    console.log("proof", proof);
-    const response = await fetch(
-      "https://developer.worldcoin.org/api/v1/verify/app_staging_129259332fd6f93d4fabaadcc5e4ff9d",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ ...proof, action: "test" }),
-      }
-    );
-    if (response.ok) {
-      const { verified } = await response.json();
-      return verified;
-    } else {
-      const { code, detail } = await response.json();
-      throw new Error(`Error Code ${code}: ${detail}`);
-    }
+  const onSuccess = () => {
+    console.log("Proof verified successfully");
+    setIsVerified(true); // Fixed this to correctly set the state
+    fetchAttestationData(uid);
+    setOpenWidget(false); // Close the widget after successful verification
   };
 
-  // Functionality after verifying
-  const onSuccess = (result) => {
-    window.alert(
-      `Successfully verified with World ID! Your nullifier hash is: ` +
-      result.nullifier_hash
-    );
-    setOpenWidget(false); // Close the widget after success
+  const handleGenerateZKP = () => {
+    if (!isWalletConnected) {
+      toast.error("Please connect your wallet");
+      return;
+    }
+    // Attempt to fetch attestation data; the WorldCoin widget will open if conditions are met
+    fetchAttestationData(uid);
   };
 
   return (
@@ -172,7 +189,6 @@ const App = () => {
           <h1>Create ZKPs of Attestations</h1>
         </div>
 
-
         <div className="zkp-container">
           <div className="input-container">
             <div className="input-uid-text">
@@ -188,12 +204,11 @@ const App = () => {
             />
           </div>
 
+          {error && <div className="error-message">{error}</div>}
+          {errorMessage && <div className="error-message">{errorMessage}</div>}
+
           <div className="submit-uid">
-            <button
-              onClick={() => fetchAttestationData(uid)}
-            >
-              Generate ZK Proof
-            </button>
+            <button onClick={handleGenerateZKP}>Generate ZK Proof</button>
           </div>
         </div>
 
@@ -203,26 +218,34 @@ const App = () => {
           </div>
         )}
 
-        {/* Loader should be visible permanently after the first request */}
         {isDataFetching && <Loader />}
 
-        {/* 
         {openWidget && (
           <IDKitWidget
             app_id="app_staging_79bf4c6cc4665f623a18b40b1a4bc286"
             action="gautam"
             verification_level={VerificationLevel.Device}
-            handleVerify={verifyProof}
+            handleVerify={handleProof}
             onSuccess={onSuccess}
+            onError={(error) => {
+              console.error("WorldCoin verification error:", error);
+              setErrorMessage("WorldCoin verification failed.");
+              setOpenWidget(false); // Close the widget on error
+            }}
           >
             {({ open }) => (
-              <button onClick={open} style={{ display: 'none' }} ref={(button) => button && button.click()}>
+              <button
+                onClick={open}
+                style={{ display: "none" }}
+                ref={(button) => button && button.click()}
+              >
                 Verify with World ID
               </button>
             )}
           </IDKitWidget>
-        )} 
-        */}
+        )}
+
+        {loading && <Loader />}
 
         <ToastContainer
           position="bottom-right"
