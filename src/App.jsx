@@ -174,11 +174,14 @@ const App = () => {
             console.log("Fields:", fields);
 
             // Set the message and stop the loader
-            setZkpMessage(
-              `ZK proof is generated with Digest: ${digest} and it provably contains the data fields: ${JSON.stringify(
-                fields
-              )}`
-            );
+            setZkpMessage(`
+              <div>
+                <p><strong>Digest:</strong> <span style="color: #3898FF"> ${digest} </span> </p>
+                <p><strong>Data Fields:</strong> <span style="color: #3898FF"> ${JSON.stringify(fields)} </span> </p>
+                <p style="font-weight: bold; font-size: x-large; display:flex ; justify-content: center">ZK Proof Generated Successfully</p>
+              </div>
+            `);
+            
             setIsDataFetching(false);
           }
         } else {
@@ -253,7 +256,10 @@ const App = () => {
           </div>
         </div>
 
-        {zkpMessage && <div className="zkp-message">{zkpMessage}</div>}
+        {/* {zkpMessage && <div className="zkp-message">{zkpMessage}</div>} */}
+        <div className="zkp-message" dangerouslySetInnerHTML={{ __html: zkpMessage }}></div>
+        {/* <div className="zkp-message">{zkpMessage}</div> */}
+
         
         {errorMessage && (
           <div className="error-message">

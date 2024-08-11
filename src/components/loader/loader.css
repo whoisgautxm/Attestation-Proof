@@ -14,13 +14,13 @@
 	padding: 10px;
 } */
 
-@keyframes blinkCursor {
+/* @keyframes blinkCursor {
 	50% {
 		border-right-color: transparent;
 	}
-}
+} */
 
-@keyframes typeAndDelete {
+/* @keyframes typeAndDelete {
 	0%,
 	10% {
 		width: 0;
@@ -35,14 +35,13 @@
 	100% {
 		width: 0;
 	}
-}
+} */
 
 .loader-main {
     height: 50%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
 }
 
 .terminal-loader {
@@ -99,12 +98,8 @@
 	padding: 10px;
 }
 .text {
-	display: inline-block;
-	white-space: nowrap;
-	overflow: hidden;
-	border-right: 2px solid green;
-	animation: typeAndDelete 4s steps(11) infinite,
-		blinkCursor 0.5s step-end infinite alternate;
+	display: flex;
 	color: rgb(0, 196, 0);
     font-family: "Space Grotesk", sans-serif;
+	font-size: large;
 }

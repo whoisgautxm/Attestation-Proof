@@ -15,7 +15,8 @@ export default function Loader() {
         </div>
 
         <div class="content">
-          <div class="text">Loading...</div>
+          <p class="text">Your Zero Knowledge Proof is on its way! 🚀 </p>
+          <p class="text">Please hold on while we work our magic ✨ , this might take a minute or two depending on your computational power. </p>
         </div>
       </div>
     </div>
