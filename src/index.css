@@ -155,12 +155,13 @@ body {
 }
 
 .zkp-message {
-    color: white;
-    font-size: large;
-    font-family: "Space Grotesk", sans-serif;
-    display: flex;
-   justify-content: center;
-    margin-top: 5%;
+  color: white;
+  font-size: x-large;
+  font-family: "Space Grotesk", sans-serif;
+  display: flex;
+  justify-content: center;
+  margin-top: 5%;
+  margin-inline: 15%;
 }
 
 
