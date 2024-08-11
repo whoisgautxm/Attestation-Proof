@@ -154,49 +154,11 @@ body {
   justify-content: center;
 }
 
-
-
-/* .input-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+.zkp-message{
+  color: white;
+  font-size: x-large;
+  font-family: "Space Grotesk", sans-serif;
 }
 
-.input {
-  height: 60%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  justify-items: center;
-  gap: 2%;
-}
 
-.input-uid input {
-  background-color : #a9a9a9;
-  border-radius: 15px;
-  height: 10%;
-  width: 45%;
-  border: none;
-  outline: none;
-  padding: 0 20px;
-  font-size: 18px;
-}
 
-.input-uid{
-    display: flex;
-    gap: 5%;
-    justify-content: center;
-    align-items: center
-}
-
-input:hover {
-  background-color: #d1d1d1;
-  transition: 300ms;
-}
-
-.submit-uid{
-  display: flex;
-  margin: auto;
-  padding: 2%;
-} */

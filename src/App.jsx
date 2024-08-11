@@ -22,13 +22,17 @@ const App = () => {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const { verify, verificationResult, loading, error } = useVerify();
   const [isVerified, setIsVerified] = useState(false); // Fixed typo here
+  const [zkpMessage, setZkpMessage] = useState("");
 
   useEffect(() => {
     setIsWalletConnected(isConnected);
   }, [isConnected]);
 
   const handleProof = async (result) => {
-    console.log("Proof received from IDKit, sending to backend:\n", JSON.stringify(result));
+    console.log(
+      "Proof received from IDKit, sending to backend:\n",
+      JSON.stringify(result)
+    );
 
     try {
       const response = await fetch("http://localhost:3001/verify-proof", {
@@ -47,10 +51,15 @@ const App = () => {
       const data = await response.json();
 
       if (data.success) {
-        console.log("Successful response from backend:\n", JSON.stringify(data));
+        console.log(
+          "Successful response from backend:\n",
+          JSON.stringify(data)
+        );
         onSuccess(); // Call onSuccess without arguments
       } else {
-        throw new Error("Verification failed: Backend response was not successful.");
+        throw new Error(
+          "Verification failed: Backend response was not successful."
+        );
       }
     } catch (error) {
       console.error("Error during proof verification:", error);
@@ -142,9 +151,40 @@ const App = () => {
             const decodedData = decodeData(abiTypes, attest_data);
             saveJSON(decodedData);
             setIsDataFetching(true);
+
+            // Fetch the ZKP result from the backend
+            const response = await fetch("http://localhost:3001/save-json", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(decodedData),
+            });
+
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+
+            const result = await response.json();
+            console.log("ZKP result:", result);
+
+            // Extract digest and fields
+            const { digest, fields } = result;
+            console.log("Digest:", digest);
+            console.log("Fields:", fields);
+
+            // Set the message and stop the loader
+            setZkpMessage(
+              `ZK proof is generated with Digest: ${digest} and it provably contains the data fields: ${JSON.stringify(
+                fields
+              )}`
+            );
+            setIsDataFetching(false);
           }
         } else {
-          toast.error("You are not the attester or recipient of this attestation");
+          toast.error(
+            "You are not the attester or recipient of this attestation"
+          );
         }
       } catch (error) {
         console.error("Error fetching attestation data:", error);
@@ -206,12 +246,15 @@ const App = () => {
 
           {error && <div className="error-message">{error}</div>}
           {errorMessage && <div className="error-message">{errorMessage}</div>}
+          
 
           <div className="submit-uid">
             <button onClick={handleGenerateZKP}>Generate ZK Proof</button>
           </div>
         </div>
 
+        {zkpMessage && <div className="zkp-message">{zkpMessage}</div>}
+        
         {errorMessage && (
           <div className="error-message">
             <p>{errorMessage}</p>
